@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Death Year Predictor | Neural Longevity Matrix</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #00ffff;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .neural-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0,255,255,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridPulse 4s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes gridPulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #00ffff;
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.3; }
+            50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .title {
+            font-size: 4rem;
+            font-weight: bold;
+            text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff;
+            margin-bottom: 20px;
+            animation: titleGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes titleGlow {
+            0%, 100% { text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff; }
+            50% { text-shadow: 0 0 30px #ff00ff, 0 0 60px #ff00ff; }
+        }
+
+        .subtitle {
+            font-size: 1.5rem;
+            opacity: 0.8;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px solid #00ffff;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(0, 255, 255, 0.5);
+        }
+
+        .section h2 {
+            color: #ff00ff;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            text-align: center;
+            animation: sectionPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes sectionPulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #00ffff;
+            font-weight: bold;
+            text-shadow: 0 0 10px #00ffff;
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #00ffff;
+            border-radius: 8px;
+            color: #00ffff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: #ff00ff;
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+            transform: scale(1.02);
+        }
+
+        .slider-container {
+            position: relative;
+            margin: 20px 0;
+        }
+
+        .slider {
+            width: 100%;
+            height: 8px;
+            background: rgba(0, 255, 255, 0.3);
+            border-radius: 5px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #ff00ff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px #ff00ff;
+        }
+
+        .slider-value {
+            position: absolute;
+            top: -30px;
+            right: 0;
+            background: rgba(255, 0, 255, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+        }
+
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: rgba(0, 255, 255, 0.1);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .checkbox-item:hover {
+            background: rgba(0, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .checkbox-item input {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-weight: bold;
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(255, 0, 255, 0.7);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(0, 255, 255, 0.3);
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff00ff, #00ffff);
+            width: 0%;
+            transition: width 0.5s ease;
+            animation: progressGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes progressGlow {
+            0%, 100% { box-shadow: 0 0 10px #ff00ff; }
+            50% { box-shadow: 0 0 20px #00ffff; }
+        }
+
+        .analysis-screen {
+            display: none;
+            text-align: center;
+            padding: 50px;
+        }
+
+        .analysis-animation {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 30px;
+            border: 3px solid #00ffff;
+            border-radius: 50%;
+            position: relative;
+            animation: scanRotate 2s linear infinite;
+        }
+
+        @keyframes scanRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .analysis-animation::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 80%;
+            height: 80%;
+            background: radial-gradient(circle, rgba(0, 255, 255, 0.3) 0%, transparent 70%);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .results-screen {
+            display: none;
+            text-align: center;
+        }
+
+        .death-year {
+            font-size: 6rem;
+            font-weight: bold;
+            color: #ff00ff;
+            text-shadow: 0 0 30px #ff00ff;
+            margin: 30px 0;
+            animation: deathYearPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes deathYearPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .risk-factors {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .risk-item {
+            background: rgba(255, 0, 255, 0.1);
+            border: 2px solid #ff00ff;
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .risk-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(255, 0, 255, 0.5);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 30px 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .month-item {
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .month-item:hover {
+            background: rgba(0, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .loading-text {
+            font-size: 1.5rem;
+            margin: 20px 0;
+            animation: loadingBlink 1s ease-in-out infinite;
+        }
+
+        @keyframes loadingBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2.5rem;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .death-year {
+                font-size: 4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="neural-grid"></div>
+    <div class="floating-particles"></div>
+
+    <div class="container">
+        <!-- Landing Section -->
+        <div id="landing" class="section">
+            <div class="header">
+                <h1 class="title">NEURAL LONGEVITY MATRIX</h1>
+                <p class="subtitle">Advanced AI-Powered Death Year Prediction System</p>
+                <p style="opacity: 0.7; margin-bottom: 30px;">
+                    Using quantum algorithms and neural networks to calculate your biological destiny...
+                </p>
+                <button class="btn" onclick="startPrediction()">INITIATE LIFE SCAN</button>
+            </div>
+        </div>
+
+        <!-- Form Section -->
+        <div id="form-section" class="section hidden">
+            <h2>BIOMETRIC DATA ACQUISITION</h2>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress"></div>
+            </div>
+            
+            <form id="prediction-form">
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label for="age">Current Age</label>
+                        <input type="number" id="age" name="age" min="1" max="120" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="height">Height (cm)</label>
+                        <input type="number" id="height" name="height" min="50" max="250" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="weight">Weight (kg)</label>
+                        <input type="number" id="weight" name="weight" min="20" max="300" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="gender">Gender</label>
+                        <select id="gender" name="gender" required>
+                            <option value="">Select Gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="country">Country</label>
+                        <select id="country" name="country" required>
+                            <option value="">Select Country</option>
+                            <option value="usa">United States</option>
+                            <option value="india">India</option>
+                            <option value="uk">United Kingdom</option>
+                            <option value="canada">Canada</option>
+                            <option value="australia">Australia</option>
+                            <option value="germany">Germany</option>
+                            <option value="japan">Japan</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="bloodType">Blood Type</label>
+                        <select id="bloodType" name="bloodType" required>
+                            <option value="">Select Blood Type</option>
+                            <option value="a+">A+</option>
+                            <option value="a-">A-</option>
+                            <option value="b+">B+</option>
+                            <option value="b-">B-</option>
+                            <option value="ab+">AB+</option>
+                            <option value="ab-">AB-</option>
+                            <option value="o+">O+</option>
+                            <option value="o-">O-</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="slider-container">
+                    <label>Sleep Hours per Night</label>
+                    <input type="range" class="slider" id="sleepHours" name="sleepHours" min="3" max="12" value="8">
+                    <div class="slider-value" id="sleepValue">8 hours</div>
+                </div>
+
+                <div class="slider-container">
+                    <label>Exercise Frequency (days per week)</label>
+                    <input type="range" class="slider" id="exercise" name="exercise" min="0" max="7" value="3">
+                    <div class="slider-value" id="exerciseValue">3 days</div>
+                </div>
+
+                <div class="slider-container">
+                    <label>Stress Level (1-10)</label>
+                    <input type="range" class="slider" id="stress" name="stress" min="1" max="10" value="5">
+                    <div class="slider-value" id="stressValue">5/10</div>
+                </div>
+
+                <div class="slider-container">
+                    <label>Daily Screen Time (hours)</label>
+                    <input type="range" class="slider" id="screenTime" name="screenTime" min="1" max="16" value="8">
+                    <div class="slider-value" id="screenValue">8 hours</div>
+                </div>
+
+                <h3 style="color: #ff00ff; margin: 30px 0 20px 0;">Monthly Health Assessment</h3>
+                <div class="month-grid">
+                    <div class="month-item">
+                        <label>January</label>
+                        <input type="range" class="slider" name="jan" min="1" max="10" value="7">
+                    </div>
+                    <div class="month-item">
+                        <label>February</label>
+                        <input type="range" class="slider" name="feb" min="1" max="10" value="7">
+                    </div>
+                    <div class="month-item">
+                        <label>March</label>
+                        <input type="range" class="slider" name="mar" min="1" max="10" value="7">
+                    </div>
+                    <div class="month-item">
+                        <label>April</label>
+                        <input type="range" class="slider" name="apr" min="1" max="10" value="7">
+                    </div>
+                    <div class="month-item">
+                        <label>May</label>
+                        <input type="range" class="slider" name="may" min="1" max="10" value="7">
+                    </div>
+                    <div class="month-item">
+                        <label>June</label>
+                        <input type="range" class="slider" name="jun" min="1" max="10" value="7">
+                    </div>
+                    <div class="month-item">
+                        <label>July</label>
+                        <input type="range" class="slider" name="jul" min="1" max="10" value="7">
+                    </div>
+                    <div class="month-item">
+                        <label>August</label>
+                        <input type="range" class="slider" name="aug" min="1" max="10" value="7">
+                    </div>
+                    <div class="month-item">
+                        <label>September</label>
+                        <input type="range" class="slider" name="sep" min="1" max="10" value="7">
+                    </div>
+                    <div class="month-item">
+                        <label>October</label>
+                        <input type="range" class="slider" name="oct" min="1" max="10" value="7">
+                    </div>
+                    <div class="month-item">
+                        <label>November</label>
+                        <input type="range" class="slider" name="nov" min="1" max="10" value="7">
+                    </div>
+                    <div class="month-item">
+                        <label>December</label>
+                        <input type="range" class="slider" name="dec" min="1" max="10" value="7">
+                    </div>
+                </div>
+
+                <h3 style="color: #ff00ff; margin: 30px 0 20px 0;">Lifestyle Factors</h3>
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label for="diet">Diet Type</label>
+                        <select id="diet" name="diet">
+                            <option value="balanced">Balanced</option>
+                            <option value="vegetarian">Vegetarian</option>
+                            <option value="vegan">Vegan</option>
+                            <option value="keto">Keto</option>
+                            <option value="paleo">Paleo</option>
+                            <option value="junk">Junk Food</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="smoking">Smoking Habits</label>
+                        <select id="smoking" name="smoking">
+                            <option value="never">Never</option>
+                            <option value="former">Former smoker</option>
+                            <option value="occasional">Occasional</option>
+                            <option value="regular">Regular</option>
+                            <option value="heavy">Heavy smoker</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="alcohol">Alcohol Consumption</label>
+                        <select id="alcohol" name="alcohol">
+                            <option value="none">None</option>
+                            <option value="occasional">Occasional</option>
+                            <option value="moderate">Moderate</option>
+                            <option value="heavy">Heavy</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="environment">Living Environment</label>
+                        <select id="environment" name="environment">
+                            <option value="rural">Rural</option>
+                            <option value="suburban">Suburban</option>
+                            <option value="urban">Urban</option>
+                            <option value="polluted">Highly Polluted</option>
+                        </select>
+                    </div>
+                </div>
+
+                <h3 style="color: #ff00ff; margin: 30px 0 20px 0;">Medical History</h3>
+                <div class="checkbox-grid">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="diabetes" name="conditions" value="diabetes">
+                        <label for="diabetes">Diabetes</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="heart" name="conditions" value="heart">
+                        <label for="heart">Heart Disease</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="cancer" name="conditions" value="cancer">
+                        <label for="cancer">Cancer History</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="hypertension" name="conditions" value="hypertension">
+                        <label for="hypertension">Hypertension</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="depression" name="conditions" value="depression">
+                        <label for="depression">Depression</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="anxiety" name="conditions" value="anxiety">
+                        <label for="anxiety">Anxiety</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="asthma" name="conditions" value="asthma">
+                        <label for="asthma">Asthma</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="arthritis" name="conditions" value="arthritis">
+                        <label for="arthritis">Arthritis</label>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 40px;">
+                    <button type="submit" class="btn">EXECUTE NEURAL ANALYSIS</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Analysis Screen -->
+        <div id="analysis" class="analysis-screen section">
+            <h2>QUANTUM PROCESSING IN PROGRESS</h2>
+            <div class="analysis-animation"></div>
+            <p class="loading-text">Analyzing biometric data...</p>
+            <p class="loading-text">Cross-referencing with global mortality databases...</p>
+            <p class="loading-text">Calculating neural longevity matrix...</p>
+            <p class="loading-text">Predicting temporal endpoint...</p>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results" class="results-screen section">
+            <h2>NEURAL ANALYSIS COMPLETE</h2>
+            <p style="font-size: 1.2rem; margin-bottom: 20px;">Your predicted death year:</p>
+            <div class="death-year" id="deathYearDisplay">2087</div>
+            
+            <div class="risk-factors">
+                <div class="risk-item">
+                    <h3>Longevity Score</h3>
+                    <p id="longevityScore">85/100</p>
+                </div>
+                <div class="risk-item">
+                    <h3>Primary Risk Factor</h3>
+                    <p id="primaryRisk">Stress Level</p>
+                </div>
+                <div class="risk-item">
+                    <h3>Life Extension Potential</h3>
+                    <p id="extensionPotential">+12 years</p>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="lifeChart"></canvas>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <h3 style="color: #ff00ff; margin-bottom: 20px;">AI Recommendations</h3>
+                <div id="recommendations"></div>
+            </div>
+
+            <div style="text-align: center; margin-top: 40px;">
+                <button class="btn" onclick="restartAnalysis()">ANALYZE AGAIN</button>
+                <button class="btn" onclick="shareResults()" style="margin-left: 20px;">SHARE RESULTS</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize floating particles
+        function createParticles() {
+            const particleContainer = document.querySelector('.floating-particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particleContainer.appendChild(particle);
+            }
+        }
+
+        // Initialize sliders
+        function initSliders() {
+            const sliders = document.querySelectorAll('.slider');
+            sliders.forEach(slider => {
+                const updateValue = () => {
+                    const value = slider.value;
+                    const valueDisplay = slider.parentElement.querySelector('.slider-value');
+                    if (valueDisplay) {
+                        let displayText = value;
+                        if (slider.id === 'sleepHours') displayText = value + ' hours';
+                        else if (slider.id === 'exercise') displayText = value + ' days';
+                        else if (slider.id === 'stress') displayText = value + '/10';
+                        else if (slider.id === 'screenTime') displayText = value + ' hours';
+                        else if (slider.name.includes('health')) displayText = value + '/10';
+                        else displayText = value + '/10';
+                        valueDisplay.textContent = displayText;
+                    }
+                };
+                
+                slider.addEventListener('input', updateValue);
+                updateValue();
+            });
+        }
+
+        // Start prediction process
+        function startPrediction() {
+            gsap.to('#landing', {duration: 0.5, opacity: 0, y: -50, onComplete: () => {
+                document.getElementById('landing').classList.add('hidden');
+                document.getElementById('form-section').classList.remove('hidden');
+                gsap.from('#form-section', {duration: 0.5, opacity: 0, y: 50});
+            }});
+        }
+
+        // Form submission
+        document.getElementById('prediction-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Show analysis screen
+            document.getElementById('form-section').classList.add('hidden');
+            document.getElementById('analysis').classList.remove('hidden');
+            document.getElementById('analysis').style.display = 'block';
+            
+            // Simulate analysis
+            setTimeout(() => {
+                showResults();
+            }, 6000);
+        });
+
+        // Show results
+        function showResults() {
+            const formData = new FormData(document.getElementById('prediction-form'));
+            const age = parseInt(formData.get('age')) || 25;
+            
+            // Calculate death year (mock calculation)
+            let deathYear = 2025 + (80 - age);
+            
+            // Adjust based on factors
+            const stress = parseInt(formData.get('stress')) || 5;
+            const exercise = parseInt(formData.get('exercise')) || 3;
+            const smoking = formData.get('smoking') || 'never';
+            const sleep = parseInt(formData.get('sleepHours')) || 8;
+            
+            // Mock adjustments
+            deathYear += (8 - stress) * 2;
+            deathYear += exercise * 1.5;
+            deathYear += Math.abs(8 - sleep) * -2;
+            
+            if (smoking === 'heavy') deathYear -= 15;
+            else if (smoking === 'regular') deathYear -= 10;
+            else if (smoking === 'occasional') deathYear -= 5;
+            
+            deathYear = Math.round(deathYear);
+            
+            // Show results
+            document.getElementById('analysis').style.display = 'none';
+            document.getElementById('results').classList.remove('hidden');
+            document.getElementById('results').style.display = 'block';
+            
+            // Update death year display
+            document.getElementById('deathYearDisplay').textContent = deathYear;
+            
+            // Calculate longevity score
+            const longevityScore = Math.max(20, Math.min(100, 100 - (stress * 5) + (exercise * 3) + (8 - Math.abs(8 - sleep)) * 2));
+            document.getElementById('longevityScore').textContent = Math.round(longevityScore) + '/100';
+            
+            // Determine primary risk
+            let primaryRisk = 'Optimal Health';
+            if (stress > 7) primaryRisk = 'High Stress Levels';
+            else if (exercise < 2) primaryRisk = 'Sedentary Lifestyle';
+            else if (smoking !== 'never') primaryRisk = 'Smoking Habits';
+            else if (sleep < 6 || sleep > 10) primaryRisk = 'Sleep Irregularities';
+            
+            document.getElementById('primaryRisk').textContent = primaryRisk;
+            
+            // Calculate extension potential
+            const extensionPotential = Math.max(0, (10 - stress) * 2 + exercise * 2);
+            document.getElementById('extensionPotential').textContent = '+' + Math.round(extensionPotential) + ' years';
+            
+            // Generate recommendations
+            generateRecommendations(formData);
+            
+            // Create life chart
+            createLifeChart(age, deathYear);
+            
+            // Animate results
+            gsap.from('.death-year', {duration: 1, scale: 0, ease: 'back.out(1.7)'});
+            gsap.from('.risk-factors .risk-item', {duration: 0.5, y: 30, opacity: 0, stagger: 0.1});
+        }
+        
+        // Generate AI recommendations
+        function generateRecommendations(formData) {
+            const recommendations = [];
+            const stress = parseInt(formData.get('stress')) || 5;
+            const exercise = parseInt(formData.get('exercise')) || 3;
+            const sleep = parseInt(formData.get('sleepHours')) || 8;
+            const smoking = formData.get('smoking') || 'never';
+            const alcohol = formData.get('alcohol') || 'none';
+            const diet = formData.get('diet') || 'balanced';
+            
+            if (stress > 6) {
+                recommendations.push({
+                    title: 'STRESS OPTIMIZATION PROTOCOL',
+                    description: 'Implement daily meditation and breathing exercises. Consider stress-reduction therapy.',
+                    impact: '+3-5 years'
+                });
+            }
+            
+            if (exercise < 3) {
+                recommendations.push({
+                    title: 'PHYSICAL ENHANCEMENT MATRIX',
+                    description: 'Increase cardiovascular activity to 150 minutes weekly. Add strength training.',
+                    impact: '+2-4 years'
+                });
+            }
+            
+            if (sleep < 7 || sleep > 9) {
+                recommendations.push({
+                    title: 'CIRCADIAN RHYTHM CALIBRATION',
+                    description: 'Optimize sleep schedule to 7-9 hours. Maintain consistent sleep-wake cycles.',
+                    impact: '+1-3 years'
+                });
+            }
+            
+            if (smoking !== 'never') {
+                recommendations.push({
+                    title: 'TOXIN ELIMINATION PROTOCOL',
+                    description: 'Immediate cessation of smoking. Implement lung detox regimen.',
+                    impact: '+5-15 years'
+                });
+            }
+            
+            if (diet === 'junk') {
+                recommendations.push({
+                    title: 'NUTRITIONAL OPTIMIZATION',
+                    description: 'Transition to Mediterranean or plant-based diet. Reduce processed foods.',
+                    impact: '+2-6 years'
+                });
+            }
+            
+            if (alcohol === 'heavy') {
+                recommendations.push({
+                    title: 'LIVER PROTECTION PROTOCOL',
+                    description: 'Reduce alcohol consumption to moderate levels. Consider detox program.',
+                    impact: '+3-7 years'
+                });
+            }
+            
+            // Default recommendations if health is optimal
+            if (recommendations.length === 0) {
+                recommendations.push({
+                    title: 'LONGEVITY ENHANCEMENT',
+                    description: 'Maintain current lifestyle. Consider periodic health screenings.',
+                    impact: '+1-2 years'
+                });
+            }
+            
+            const container = document.getElementById('recommendations');
+            container.innerHTML = recommendations.map(rec => `
+                <div class="risk-item" style="margin-bottom: 15px;">
+                    <h4 style="color: #ff00ff; margin-bottom: 10px;">${rec.title}</h4>
+                    <p style="margin-bottom: 10px;">${rec.description}</p>
+                    <p style="color: #00ffff; font-weight: bold;">Potential Impact: ${rec.impact}</p>
+                </div>
+            `).join('');
+        }
+        
+        // Create life expectancy chart
+        function createLifeChart(currentAge, deathYear) {
+            const ctx = document.getElementById('lifeChart').getContext('2d');
+            const currentYear = 2025;
+            const lifespan = deathYear - currentYear + currentAge;
+            
+            const years = [];
+            const healthData = [];
+            
+            for (let i = currentAge; i <= lifespan; i++) {
+                years.push(i);
+                // Mock health decline over time
+                const healthScore = Math.max(0, 100 - Math.pow((i - currentAge) / (lifespan - currentAge), 2) * 100);
+                healthData.push(healthScore);
+            }
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: years,
+                    datasets: [{
+                        label: 'Health Score',
+                        data: healthData,
+                        borderColor: '#00ffff',
+                        backgroundColor: 'rgba(0, 255, 255, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Predicted Health Trajectory',
+                            color: '#ff00ff',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        legend: {
+                            labels: {
+                                color: '#00ffff'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Age (Years)',
+                                color: '#00ffff'
+                            },
+                            ticks: {
+                                color: '#00ffff'
+                            },
+                            grid: {
+                                color: 'rgba(0, 255, 255, 0.3)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Health Score',
+                                color: '#00ffff'
+                            },
+                            ticks: {
+                                color: '#00ffff'
+                            },
+                            grid: {
+                                color: 'rgba(0, 255, 255, 0.3)'
+                            },
+                            min: 0,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Restart analysis
+        function restartAnalysis() {
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('landing').classList.remove('hidden');
+            document.getElementById('prediction-form').reset();
+            initSliders();
+            
+            gsap.from('#landing', {duration: 0.5, opacity: 0, scale: 0.8, ease: 'back.out(1.7)'});
+        }
+        
+        // Share results
+        function shareResults() {
+            const deathYear = document.getElementById('deathYearDisplay').textContent;
+            const longevityScore = document.getElementById('longevityScore').textContent;
+            
+            const shareText = `🤖 Neural Longevity Matrix Analysis Complete!\n\n` +
+                             `🔮 Predicted Death Year: ${deathYear}\n` +
+                             `⚡ Longevity Score: ${longevityScore}\n` +
+                             `🧬 AI-powered prediction using quantum algorithms\n\n` +
+                             `Try the Death Year Predictor: [Your GitHub Pages URL]`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Neural Longevity Matrix Results',
+                    text: shareText
+                });
+            } else {
+                // Fallback for browsers without native sharing
+                navigator.clipboard.writeText(shareText).then(() => {
+                    alert('Results copied to clipboard!');
+                });
+            }
+        }
+        
+        // Form progress tracking
+        function updateProgress() {
+            const form = document.getElementById('prediction-form');
+            const inputs = form.querySelectorAll('input[required], select[required]');
+            let completed = 0;
+            
+            inputs.forEach(input => {
+                if (input.value) completed++;
+            });
+            
+            const progress = (completed / inputs.length) * 100;
+            document.getElementById('progress').style.width = progress + '%';
+        }
+        
+        // Add progress tracking to form inputs
+        document.addEventListener('DOMContentLoaded', function() {
+            createParticles();
+            initSliders();
+            
+            const form = document.getElementById('prediction-form');
+            const inputs = form.querySelectorAll('input, select');
+            
+            inputs.forEach(input => {
+                input.addEventListener('input', updateProgress);
+                input.addEventListener('change', updateProgress);
+            });
+            
+            // Add hover effects to sections
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => {
+                section.addEventListener('mouseenter', function() {
+                    gsap.to(this, {duration: 0.3, scale: 1.02, ease: 'power2.out'});
+                });
+                
+                section.addEventListener('mouseleave', function() {
+                    gsap.to(this, {duration: 0.3, scale: 1, ease: 'power2.out'});
+                });
+            });
+            
+            // Add typing effect to analysis text
+            const analysisTexts = document.querySelectorAll('.loading-text');
+            analysisTexts.forEach((text, index) => {
+                text.style.display = 'none';
+                setTimeout(() => {
+                    text.style.display = 'block';
+                    gsap.from(text, {duration: 0.5, opacity: 0, y: 20});
+                }, index * 1500);
+            });
+            
+            // Add glow effect to buttons
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(button => {
+                button.addEventListener('mouseenter', function() {
+                    gsap.to(this, {duration: 0.3, boxShadow: '0 0 30px rgba(255, 0, 255, 0.8)'});
+                });
+                
+                button.addEventListener('mouseleave', function() {
+                    gsap.to(this, {duration: 0.3, boxShadow: '0 0 20px rgba(255, 0, 255, 0.5)'});
+                });
+            });
+            
+            // Add particle interaction
+            document.addEventListener('mousemove', function(e) {
+                const particles = document.querySelectorAll('.particle');
+                particles.forEach(particle => {
+                    const rect = particle.getBoundingClientRect();
+                    const distance = Math.sqrt(
+                        Math.pow(e.clientX - rect.left, 2) + 
+                        Math.pow(e.clientY - rect.top, 2)
+                    );
+                    
+                    if (distance < 100) {
+                        gsap.to(particle, {
+                            duration: 0.3,
+                            scale: 1.5,
+                            opacity: 1,
+                            boxShadow: '0 0 20px #00ffff'
+                        });
+                    } else {
+                        gsap.to(particle, {
+                            duration: 0.3,
+                            scale: 1,
+                            opacity: 0.3,
+                            boxShadow: 'none'
+                        });
+                    }
+                });
+            });
+        });
+        
+        // Add sound effects (optional - requires audio files)
+        function playSound(soundType) {
+            // This would play different sounds for different actions
+            // You would need to add audio files to implement this
+            console.log('Playing sound:', soundType);
+        }
+        
+        // Easter eggs and hidden features
+        let konamiCode = [];
+        const konamiSequence = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65];
+        
+        document.addEventListener('keydown', function(e) {
+            konamiCode.push(e.keyCode);
+            if (konamiCode.length > konamiSequence.length) {
+                konamiCode.shift();
+            }
+            
+            if (konamiCode.toString() === konamiSequence.toString()) {
+                // Easter egg: Matrix mode
+                document.body.style.background = 'linear-gradient(135deg, #000 0%, #003300 50%, #000 100%)';
+                document.body.style.color = '#00ff00';
+                alert('🎉 Matrix Mode Activated! You found the easter egg!');
+            }
+        });
+        
+        // Add mobile touch interactions
+        if ('ontouchstart' in window) {
+            document.addEventListener('touchstart', function(e) {
+                const touch = e.touches[0];
+                const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                
+                if (element && element.classList.contains('section')) {
+                    gsap.to(element, {duration: 0.1, scale: 0.98});
+                }
+            });
+            
+            document.addEventListener('touchend', function(e) {
+                const sections = document.querySelectorAll('.section');
+                sections.forEach(section => {
+                    gsap.to(section, {duration: 0.2, scale: 1});
+                });
+            });
+        }
+    </script>
+</body>
+</html>
